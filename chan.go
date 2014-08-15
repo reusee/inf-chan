@@ -5,7 +5,7 @@ import (
 )
 
 type _Node struct {
-	value *reflect.Value
+	value reflect.Value
 	next  *_Node
 }
 
@@ -16,7 +16,7 @@ func Link(in interface{}, out interface{}) chan bool {
 	go func() {
 		inValue := reflect.ValueOf(in)
 		outValue := reflect.ValueOf(out)
-		cases := []reflect.SelectCase{
+		casesA := []reflect.SelectCase{
 			{ // send
 				Dir:  reflect.SelectSend,
 				Chan: outValue,
@@ -30,17 +30,23 @@ func Link(in interface{}, out interface{}) chan bool {
 				Chan: reflect.ValueOf(kill),
 			},
 		}
-		emptyCase := reflect.SelectCase{
-			Dir: reflect.SelectRecv,
+		casesB := []reflect.SelectCase{
+			{ // empty
+				Dir: reflect.SelectRecv,
+			},
+			{ // receive
+				Dir:  reflect.SelectRecv,
+				Chan: inValue,
+			},
+			{ // kill
+				Dir:  reflect.SelectRecv,
+				Chan: reflect.ValueOf(kill),
+			},
 		}
 		for {
 			if head != tail {
-				cases[0] = reflect.SelectCase{
-					Dir:  reflect.SelectSend,
-					Chan: outValue,
-					Send: *head.value,
-				}
-				i, recv, ok := reflect.Select(cases)
+				casesA[0].Send = head.value
+				i, recv, ok := reflect.Select(casesA)
 				if i == 0 { // sent
 					head = head.next
 				} else if i == 1 { // in chan
@@ -48,7 +54,7 @@ func Link(in interface{}, out interface{}) chan bool {
 						outValue.Close()
 						return
 					} else { // received
-						tail.value = &recv
+						tail.value = recv
 						node := new(_Node)
 						tail.next = node
 						tail = node
@@ -57,14 +63,13 @@ func Link(in interface{}, out interface{}) chan bool {
 					return
 				}
 			} else {
-				cases[0] = emptyCase
-				i, recv, ok := reflect.Select(cases)
+				i, recv, ok := reflect.Select(casesB)
 				if i == 1 { // in chan
 					if !ok { // in chan closed
 						outValue.Close()
 						return
 					} else { // received
-						tail.value = &recv
+						tail.value = recv
 						node := new(_Node)
 						tail.next = node
 						tail = node

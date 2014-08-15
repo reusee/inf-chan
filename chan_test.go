@@ -31,3 +31,14 @@ func TestKill(t *testing.T) {
 		t.Fatal()
 	}
 }
+
+func BenchmarkChan(b *testing.B) {
+	in := make(chan bool)
+	out := make(chan bool)
+	Link(in, out)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		in <- true
+		<-out
+	}
+}
