@@ -1,14 +1,8 @@
 package c
 
 import (
-	"net/http"
-	_ "net/http/pprof"
 	"reflect"
 )
-
-func init() {
-	go http.ListenAndServe("0.0.0.0:60000", nil)
-}
 
 type _Node struct {
 	value *reflect.Value

@@ -1,7 +1,6 @@
 package c
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 	"time"
@@ -11,16 +10,13 @@ func TestLink(t *testing.T) {
 	in := make(chan int)
 	out := make(chan int)
 	Link(in, out)
-	n := 1024000
+	n := 102400
 	for i := 0; i < n; i++ {
 		in <- i
 	}
-	print("all sent\n")
 	for i := 0; i < n; i++ {
 		<-out
 	}
-	print("all received\n")
-	runtime.GC()
 }
 
 func TestKill(t *testing.T) {
@@ -31,5 +27,7 @@ func TestKill(t *testing.T) {
 		close(kill)
 	}
 	time.Sleep(time.Millisecond * 100)
-	fmt.Printf("%d\n", runtime.NumGoroutine())
+	if runtime.NumGoroutine() > 32 {
+		t.Fatal()
+	}
 }
