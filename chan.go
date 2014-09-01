@@ -40,10 +40,8 @@ func Link(in interface{}, out interface{}) chan bool {
 				Chan: reflect.ValueOf(kill),
 			},
 		}
+
 		casesB := []reflect.SelectCase{
-			{ // empty
-				Dir: reflect.SelectRecv,
-			},
 			{ // receive
 				Dir:  reflect.SelectRecv,
 				Chan: inValue,
@@ -78,7 +76,7 @@ func Link(in interface{}, out interface{}) chan bool {
 
 			} else {
 				i, recv, ok := reflect.Select(casesB)
-				if i == 1 { // in chan
+				if i == 0 { // in chan
 					if !ok { // in chan closed
 						outValue.Close()
 						return
@@ -88,10 +86,8 @@ func Link(in interface{}, out interface{}) chan bool {
 						tail.next = node
 						tail = node
 					}
-				} else if i == 2 { // kill
+				} else if i == 1 { // kill
 					return
-				} else if i == 0 {
-					panic("impossible")
 				}
 			}
 		}
